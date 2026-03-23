@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BellaBaxter.Crypto</RootNamespace>
+    <AssemblyName>BellaBaxter.Crypto</AssemblyName>
+
+    <!-- NuGet package metadata -->
+    <PackageId>BellaBaxter.Crypto</PackageId>
+    <Version>0.1.0</Version>
+    <IsPackable>true</IsPackable>
+    <Description>Shared ECIES (ECDH-P256-HKDF-SHA256-AES256GCM) crypto primitives for Bella Baxter API and SDK.</Description>
+    <PackageTags>ecies;encryption;bella-baxter</PackageTags>
+    <PackageProjectUrl>https://github.com/cosmic-chimps/bella-crypto</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/cosmic-chimps/bella-crypto</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+</Project>
