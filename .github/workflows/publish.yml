@@ -82,6 +82,6 @@ jobs:
       - uses: slackapi/slack-github-action@v3.0.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
+          webhook-type: webhook-trigger
           payload: |
             text: "*BellaBaxter.Crypto NuGet publish*: ${{ needs.publish.result }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
