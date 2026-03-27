@@ -84,4 +84,4 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: webhook-trigger
           payload: |
-            text: "*BellaBaxter.Crypto NuGet publish*: ${{ needs.publish.result }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            text: "${{ needs.publish.result == 'success' && '✅' || needs.publish.result == 'failure' && '❌' || '⚠️' }} *BellaBaxter.Crypto NuGet publish*: ${{ needs.publish.result }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
