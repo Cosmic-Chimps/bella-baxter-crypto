@@ -9,7 +9,7 @@
 
     <!-- NuGet package metadata -->
     <PackageId>BellaBaxter.Crypto</PackageId>
-    <Version>0.1.1-preview.71</Version>
+    <Version>0.1.1-preview.72</Version>
     <IsPackable>true</IsPackable>
     <Description>Shared ECIES (ECDH-P256-HKDF-SHA256-AES256GCM) crypto primitives for Bella Baxter API and SDK.</Description>
     <PackageTags>ecies;encryption;bella-baxter</PackageTags>
