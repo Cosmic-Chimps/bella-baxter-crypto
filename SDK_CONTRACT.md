@@ -113,6 +113,26 @@ When the header is present, the server responds with:
 | `tag` | `string` | Base64, 16 bytes, separate from ciphertext. **FROZEN** |
 | `ciphertext` | `string` | Base64, AES-256-GCM ciphertext. **FROZEN** |
 
+### Response Headers: `X-Bella-Wrapped-Dek` and `X-Bella-Lease-Expires`
+
+A response MAY carry the environment's data-encryption key, wrapped to the caller's public key, so a
+client can decrypt `bellabaxter:v1:` values locally:
+
+| Header | Notes |
+|--------|-------|
+| `X-Bella-Wrapped-Dek` | Base64 of the JSON ECIES payload (same shape as an encrypted response body) |
+| `X-Bella-Lease-Expires` | ISO 8601 expiry of the accompanying lease |
+
+**Both headers MAY be absent, and a client MUST NOT depend on either.** This has always been true; as
+of spec 037 it is also *deliberate*. The server releases the environment key only to a **registered
+recipient** — a device a person registered with `bella auth setup`, or the public key recorded against
+an API key when the key was created. A client presenting an ephemeral, unregistered key still receives
+the secret values (transport-encrypted as above); it simply does not receive the environment key.
+
+Verified across all nine SDKs at the time of writing: every one treats these headers as optional, so
+this needed no SDK release. A future SDK that requires them would break against any caller that has not
+registered its key.
+
 ### Crypto Algorithm (ALL values FROZEN)
 
 ```
