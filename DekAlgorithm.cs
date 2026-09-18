@@ -35,7 +35,11 @@ public static class DekAlgorithm
         var tag = new byte[TagSize];
         var ciphertext = new byte[plaintext.Length];
 
-        using var aesGcm = new AesGcm(dek.ToArray(), TagSize);
+        // The span overload, NOT dek.ToArray() (#829): the copy that made was a second live
+        // 32-byte DEK on the heap that no caller could reach, so the fifteen call sites that
+        // dutifully zero their own `dek` were zeroing one of two copies. AesGcm keeps its own
+        // internal schedule either way and Dispose clears it; the avoidable copy was ours.
+        using var aesGcm = new AesGcm(dek, TagSize);
         aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
 
         // Pack: nonce (12) | tag (16) | ciphertext (N)
@@ -76,7 +80,7 @@ public static class DekAlgorithm
 
         var plaintext = new byte[ciphertext.Length];
 
-        using var aesGcm = new AesGcm(dek.ToArray(), TagSize);
+        using var aesGcm = new AesGcm(dek, TagSize);
         aesGcm.Decrypt(nonce, ciphertext, tag, plaintext);
 
         return plaintext;
