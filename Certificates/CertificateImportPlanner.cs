@@ -54,7 +54,7 @@ public static partial class CertificateImportPlanner
     /// <summary>
     /// Secret keys for certificates carry a common name, so dots and hyphens are required. This
     /// is deliberately NOT the environment-variable pattern `bella secrets set` enforces, which
-    /// would reject "adyen.prosa.com.mx" (research D8).
+    /// would reject "daffy.acme.com.mx" (research D8).
     /// </summary>
     [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9._\-]*$")]
     private static partial Regex SecretKeyPattern();

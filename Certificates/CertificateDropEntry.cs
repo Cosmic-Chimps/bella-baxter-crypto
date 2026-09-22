@@ -9,8 +9,8 @@ namespace BellaBaxter.Crypto.Certificates;
 //     key.pem plus <cn_with_underscores>.pem, but a drop whose files are named differently must still
 //     import (spec 020 FR-003).
 //  2. Identity comes from the leaf certificate's common name, never from the folder or file name
-//     (spec 020 FR-002). In the real drop the folder is "ADkushki", the file is "adkushki_...", and
-//     the common name is "ADkushki.prosa.com.mx" — only the certificate is trustworthy.
+//     (spec 020 FR-002). In the real drop the folder is "RoadRunner", the file is "roadrunner_...", and
+//     the common name is "RoadRunner.acme.com.mx" — only the certificate is trustworthy.
 
 /// <summary>Why a subdirectory produced no certificate.</summary>
 public enum DropEntrySkipReason
