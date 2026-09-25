@@ -20,6 +20,33 @@ public static class CertificateBundleValidator
     private const string SubjectAlternativeNameOid = "2.5.29.17";
 
     /// <summary>
+    /// Validate a bundle as of its OWN leaf's <c>notBefore</c> — every structural rule (readable chain,
+    /// leaf-first order, signatures, key match) applies; only "is it inside its validity window NOW"
+    /// is set aside. For describing a certificate that was acceptable when it was written (a past
+    /// secret version), where the caller reports expiry separately rather than refusing to read it.
+    /// A chain whose leaf cannot be read is rejected exactly as <see cref="Validate"/> rejects it.
+    /// </summary>
+    public static CertificateBundleValidation ValidateAsIssued(string chainPem, string privateKeyPem)
+    {
+        var blocks = CertificateBundleReader.SplitCertificateBlocks(chainPem);
+        if (blocks.Count == 0)
+            return Validate(chainPem, privateKeyPem);
+
+        DateTimeOffset issuedAt;
+        try
+        {
+            using var leaf = X509Certificate2.CreateFromPem(blocks[0]);
+            issuedAt = new DateTimeOffset(leaf.NotBefore.ToUniversalTime());
+        }
+        catch (Exception ex) when (ex is CryptographicException or ArgumentException)
+        {
+            return Validate(chainPem, privateKeyPem); // the same UnreadableChain rejection, from the one author
+        }
+
+        return Validate(chainPem, privateKeyPem, now: issuedAt);
+    }
+
+    /// <summary>
     /// Validate a PEM chain plus its PEM private key. Returns the derived facts on success, or
     /// a typed rejection with an operator-readable reason.
     /// </summary>
