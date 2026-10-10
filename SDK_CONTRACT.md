@@ -113,17 +113,21 @@ When the header is present, the server responds with:
 | `tag` | `string` | Base64, 16 bytes, separate from ciphertext. **FROZEN** |
 | `ciphertext` | `string` | Base64, AES-256-GCM ciphertext. **FROZEN** |
 
-### Response Headers: `X-Bella-Wrapped-Dek` and `X-Bella-Lease-Expires`
+### Response Headers: `X-Bella-Wrapped-Dek`, `X-Bella-Wrapped-Shared-Dek` and `X-Bella-Lease-Expires`
 
-A response MAY carry the environment's data-encryption key, wrapped to the caller's public key, so a
-client can decrypt `bellabaxter:v1:` values locally:
+A response MAY carry data keys wrapped to the caller's public key. Since spec 077 they are the keys for
+what the caller may read, never the project's own key (which opens every environment):
 
 | Header | Notes |
 |--------|-------|
-| `X-Bella-Wrapped-Dek` | Base64 of the JSON ECIES payload (same shape as an encrypted response body) |
+| `X-Bella-Wrapped-Dek` | The ENVIRONMENT's key (32 bytes). Base64 of the JSON ECIES payload (same shape as an encrypted response body). Shape unchanged, so older clients unwrap it exactly as before. |
+| `X-Bella-Wrapped-Shared-Dek` | The project's SHARED key (32 bytes), for its `_global` values. Same wrapping. New in spec 077; older clients ignore it. |
 | `X-Bella-Lease-Expires` | ISO 8601 expiry of the accompanying lease |
 
-**Both headers MAY be absent, and a client MUST NOT depend on either.** This has always been true; as
+Before spec 077 `X-Bella-Wrapped-Dek` carried the project key, although this section already called it
+the environment's key.
+
+**The wrapped-key headers MAY be absent, and a client MUST NOT depend on any of them.** This has always been true; as
 of spec 037 it is also *deliberate*. The server releases the environment key only to a **registered
 recipient** — a device a person registered with `bella auth setup`, or the public key recorded against
 an API key when the key was created. A client presenting an ephemeral, unregistered key still receives
@@ -132,6 +136,37 @@ the secret values (transport-encrypted as above); it simply does not receive the
 Verified across all nine SDKs at the time of writing: every one treats these headers as optional, so
 this needed no SDK release. A future SDK that requires them would break against any caller that has not
 registered its key.
+
+### At-rest envelopes: `bellabaxter:v1:` and `bellabaxter:v2:`
+
+The server stores secret values encrypted and **always serves them decrypted**; a client receives
+plaintext. A sealed value in a response is an error, and a client MUST refuse it rather than return it
+as the secret. Both envelopes are `prefix + base64(nonce 12 | tag 16 | ciphertext)`, AES-256-GCM:
+
+- `bellabaxter:v1:` — sealed under a project data key, no associated data. Being retired (spec 077).
+- `bellabaxter:v2:` — sealed under a key DERIVED for the value's scope, with its binding as associated
+  data, so the same ciphertext read anywhere else fails to open.
+
+**Key derivation** (`DataKeyDerivation`): HKDF-SHA256, empty salt, 32-byte output, input = the project data
+key, `info` = `bellabaxter/v2/env/{projectId:N}/{environmentId:N}` for an environment, or
+`bellabaxter/v2/shared/{projectId:N}` for the project's `_global` values.
+
+**Binding** (`SecretBinding`, the associated data): five fields, each a 4-byte big-endian length followed by
+its UTF-8 bytes, in order: `bellabaxter:v2`, the tenant id (`N`), the project id (`N`), the environment id
+(`N`) or the literal `_global`, and the secret key (its name, the last path segment).
+
+Opening a `v2` value needs the tenant, project and environment ids, which the frozen secrets response does
+not carry, so no SDK opens one today. Known-answer vectors, computed with an independent implementation,
+are pinned in `BellaBaxter.Tests/Unit/Crypto/BoundEnvelopeTests.cs`:
+
+| Input | Value |
+|-------|-------|
+| project key | bytes `00 01 02 … 1f` |
+| tenant / project / environment ids | `1111…1111` / `2222…2222` / `3333…3333` (`N` format) |
+| key | `DB_PASSWORD` |
+| environment key | `c987bbc74080310d44149760603982c60b21637fedfd5a83dc84e9c4da20e622` |
+| shared key | `a9a51e7e12c64c4ec8bff53660cb2b6a0ac4b9016bbe9af442ad2d97d2d044d1` |
+| `v2` envelope of `s3cret-value` | `bellabaxter:v2:oKGio6SlpqeoqaqrwU7aX5qD6uAsJVA/9ZyETAWwm8UZ68UN6spsSQ==` |
 
 ### Crypto Algorithm (ALL values FROZEN)
 
