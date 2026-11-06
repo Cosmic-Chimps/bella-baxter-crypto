@@ -6,8 +6,9 @@ name: Publish BellaBaxter.Crypto to NuGet
 #   git tag v0.1.1
 #   git push origin v0.1.1
 #
-# Required GitHub Secret:
-#   NUGET_API_KEY  — API key from nuget.org with push scope for BellaBaxter.*
+# NuGet Trusted Publishing: no stored API key. NuGet/login exchanges this run's GitHub OIDC token for a
+# short-lived key, which nuget.org grants only to the policy that names this repository (bella-baxter-crypto),
+# this workflow file (publish.yml) and the package (BellaBaxter.Crypto), owned by `jjchiw`.
 
 on:
   push:
@@ -20,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write # NuGet Trusted Publishing: the OIDC token NuGet/login exchanges
 
     steps:
       - name: Checkout
@@ -59,17 +61,24 @@ jobs:
             -p:Version=${{ steps.version.outputs.VERSION }} \
             --output ./nuget-output
 
+      # Just before the push: the key it returns is short-lived.
+      - name: NuGet login (Trusted Publishing)
+        id: nuget_login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: jjchiw
+
       - name: Push to NuGet.org
         run: |
           dotnet nuget push ./nuget-output/*.nupkg \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
 
       - name: Push symbols to NuGet.org
         run: |
           dotnet nuget push ./nuget-output/*.snupkg \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
         continue-on-error: true # snupkg push failure is non-fatal
